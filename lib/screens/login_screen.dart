@@ -202,7 +202,7 @@ class _LoginState extends State<Login> {
                                     EmailValidator(
                                         errorText: 'Please enter a valid Email')
                                   ],
-                                ),
+                                ).call,
                                 decoration: InputDecoration(
                                   prefixIcon: const Icon(
                                     Icons.email,
@@ -247,7 +247,7 @@ class _LoginState extends State<Login> {
                                     RequiredValidator(
                                         errorText: 'Password Required'),
                                   ],
-                                ),
+                                ).call,
 
                                 decoration: InputDecoration(
                                   prefixIcon: const Icon(
@@ -307,7 +307,7 @@ class _LoginState extends State<Login> {
                         // 5. Login Button
                         Padding(
                           padding: const EdgeInsets.only(top: 500.0, left: 85),
-                          child: Container(
+                          child: SizedBox(
                               width: MediaQuery.of(context).size.width * 0.55,
                               height: 50,
                               child: PhysicalModel(
@@ -322,8 +322,8 @@ class _LoginState extends State<Login> {
                       var objectFlutterApi = FlutterApi();
                                     var object = LoginCheck(email, password);
 
-                                    if (object.Validator() == "emptyEmail" ||
-                                        object.Validator() == "emptyPassword") {
+                                    if (object.validator() == "emptyEmail" ||
+                                        object.validator() == "emptyPassword") {
                                       // If Invalid then Show the Error Message
                                       setState(() {
                                         // Please enter email and password
@@ -342,7 +342,7 @@ class _LoginState extends State<Login> {
                                         Navigator.push(
                                           context,
                                           MaterialPageRoute(
-                                              builder: (context) => Search()),
+                                              builder: (context) => const Search()),
                                         );
                                         myalert1();
                                       });
@@ -382,26 +382,26 @@ class _LoginState extends State<Login> {
                             child: RichText(
                               text: TextSpan(
                                   text: "Don't have an account?",
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w300,
                                       color: Colors.black),
                                   children: <TextSpan>[
                                     TextSpan(
                                       text: " SignUp!",
-                                      style: TextStyle(
+                                      style: const TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.w300,
                                           color:
                                               Color.fromRGBO(53, 108, 254, 1)),
                                       recognizer: TapGestureRecognizer()
                                         ..onTap = () {
-                                          print("SignUp");
+                                          // Navigate to SignUp
                                           Navigator.push(
                                             context,
                                             MaterialPageRoute(
                                               builder: (context) =>
-                                                  Registration(),
+                                                  const Registration(),
                                             ),
                                           );
                                         },
@@ -411,13 +411,13 @@ class _LoginState extends State<Login> {
                           ),
                         ),
                         //logo of shopWise
-                        Padding(
-                          padding: const EdgeInsets.only(top: 230.0, left: 04),
+                        const Padding(
+                          padding: EdgeInsets.only(top: 230.0, left: 04),
                           child: SizedBox(
                             width: double.infinity,
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
-                              children: const [
+                              children: [
                                 Image(
                                     image: AssetImage("images/logo4.png"),
                                     width: 170),
@@ -445,7 +445,7 @@ class LoginCheck {
   LoginCheck(this.email, this.password);
 
   // Validating Email and Password
-  String Validator() {
+  String validator() {
     // If Email is Empty
     if (email.text == "") {
       return "emptyEmail"; // Error Message

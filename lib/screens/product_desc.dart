@@ -24,12 +24,12 @@ class _ProductState extends State<Product> {
               decoration: const BoxDecoration(
                 color: Color(0xff123456),
               ),
-              child: Column(children: [
+              child: const Column(children: [
                 Padding(
-                  padding: const EdgeInsets.only(top: 27),
+                  padding: EdgeInsets.only(top: 27),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: const [
+                    children: [
                       Padding(
                           padding: EdgeInsets.all(12.0),
                           child: Icon(Icons.arrow_back_ios_new_sharp,
@@ -59,27 +59,24 @@ class _ProductState extends State<Product> {
         ),
         Padding(
           padding: const EdgeInsets.only(top: 200.0, left: 65),
-          // ignore: avoid_unnecessary_containers
-          child: Container(
-            child: ToggleSwitch(
+          child: ToggleSwitch(
               minWidth: 110.0,
               cornerRadius: 20.0,
-              activeBgColors: [
-                [Colors.green[800]!],
-                [Colors.red[800]!]
+              activeBgColors: const [
+                [Colors.green],
+                [Colors.red]
               ],
               activeFgColor: Colors.white,
               inactiveBgColor: Colors.grey,
               inactiveFgColor: Colors.white,
               initialLabelIndex: 1,
               totalSwitches: 2,
-              labels: ['Description', 'Maps'],
+              labels: const ['Description', 'Maps'],
               radiusStyle: true,
               onToggle: (index) {
-                print('switched to: $index');
+                // Handle toggle switch
               },
             ),
-          ),
         ),
       ],
     ));

@@ -302,7 +302,7 @@ class _RegistrationState extends State<Registration> {
             // 5. Submit Button
             Padding(
               padding: const EdgeInsets.only(top: 530.0, left: 85),
-              child: Container(
+              child: SizedBox(
                   width: MediaQuery.of(context).size.width * 0.55,
                   height: 50,
                   child: PhysicalModel(
@@ -317,13 +317,15 @@ class _RegistrationState extends State<Registration> {
                           if (await object1.register(email.text, name.text,
                                   phoneNumber.text, password.text) ==
                               true) {
-                            print("successfully add data");
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => const Login()),
-                            );
+                            // Successfully added data
+                            if (context.mounted) {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => const Login()),
+                              );
+                            }
                           } else {
-                            print("not success");
+                            // Registration failed
                             // Error handling
                           }
                         }
@@ -355,14 +357,14 @@ class _RegistrationState extends State<Registration> {
                 child: RichText(
                   text: TextSpan(
                       text: "Already have an account?",
-                      style: TextStyle(
+                      style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w300,
                           color: Colors.black),
                       children: <TextSpan>[
                         TextSpan(
                             text: " SignIn!",
-                            style: TextStyle(
+                            style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w300,
                                 color: Color.fromRGBO(53, 108, 254, 1)),
@@ -379,13 +381,13 @@ class _RegistrationState extends State<Registration> {
               ),
             ),
             //logo of shopWise
-            Padding(
-              padding: const EdgeInsets.only(top: 110.0, left: 02),
+            const Padding(
+              padding: EdgeInsets.only(top: 110.0, left: 02),
               child: SizedBox(
                 width: double.infinity,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
+                  children: [
                     Image(image: AssetImage("images/logo4.png"), width: 170),
                     SizedBox(height: 20),
                   ],

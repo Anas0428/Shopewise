@@ -13,7 +13,7 @@ class Search extends StatefulWidget {
 
 class _SearchState extends State<Search> {
   String fullAddress = ".....";
-  TextEditingController _searchQuery = TextEditingController();
+  final TextEditingController _searchQuery = TextEditingController();
   TextEditingController txt = TextEditingController();
   List allProducts = [];
   List nearbyProducts = [];
@@ -83,7 +83,7 @@ class _SearchState extends State<Search> {
                                     child: const Icon(Icons.menu_open_sharp,
                                         size: 35, color: Colors.white))),
                             Padding(
-                              padding: EdgeInsets.all(1.0),
+                              padding: const EdgeInsets.all(1.0),
                               child: PopupMenuButton(
                                 icon: const Icon(Icons.more_horiz,
                                     size: 25, color: Colors.white),
@@ -126,7 +126,7 @@ class _SearchState extends State<Search> {
                       Flexible(
                         child: Container(
                           width: MediaQuery.of(context).size.width,
-                          padding: EdgeInsets.symmetric(horizontal: 20),
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -145,7 +145,7 @@ class _SearchState extends State<Search> {
                                     fontWeight: FontWeight.normal,
                                     fontSize: MediaQuery.of(context).size.width * 0.065),
                               ),
-                              SizedBox(height: 10),
+                              const SizedBox(height: 10),
                               Flexible(
                                 child: Container(
                                   width: double.infinity,
@@ -159,7 +159,6 @@ class _SearchState extends State<Search> {
                                     onSubmitted: (value) {},
                                     onChanged: (value) {
                                       // Filtering the Products
-                                      print(value);
                                       setState(() {
                                         if (value == "" && status == 0) {
                                           searchedProducts = allProducts;
@@ -212,7 +211,7 @@ class _SearchState extends State<Search> {
                         fontWeight: FontWeight.bold,
                         fontSize: MediaQuery.of(context).size.width * 0.055),
                   ),
-                  SizedBox(height: 10),
+                  const SizedBox(height: 10),
                   Row(
                     children: [
                       const Icon(
@@ -241,7 +240,7 @@ class _SearchState extends State<Search> {
             Positioned(
               top: MediaQuery.of(context).size.height * 0.08,
               right: 20,
-              child: CircleAvatar(
+              child: const CircleAvatar(
                 maxRadius: 25,
                 minRadius: 25,
                 backgroundColor: Colors.white,
@@ -299,18 +298,18 @@ class _SearchState extends State<Search> {
               right: 0,
               bottom: 0,
               child: ListView.builder(
-                  padding: EdgeInsets.only(top: 10),
+                  padding: const EdgeInsets.only(top: 10),
                   itemCount: status == 0
                       ? searchedProducts.length
                       : nearbyProducts.length,
                   itemBuilder: (context, index) {
                     if (status == 0) {
-                      print("---------> ALL Products");
+                      // ALL Products
                       return CardView(
                         productList: searchedProducts[index],
                       );
                     } else {
-                      print("---------> NearBy Products");
+                      // NearBy Products
 
                       return CardView(
                         productList: nearbyProducts[index],
@@ -351,7 +350,7 @@ class _SearchState extends State<Search> {
     setState(() {
       status = index;
     });
-    print(status);
+    // Status updated
 
     if (index == 0) return;
 
@@ -360,22 +359,21 @@ class _SearchState extends State<Search> {
     int radius = 5000000;
     nearbyProducts.clear();
     // filter the products based on the location
-    allProducts.forEach((element) {
+    for (var element in allProducts) {
       if (element["StoreLocation"] != null) {
         var distance = Geolocator.distanceBetween(
             pos.latitude,
             pos.longitude,
             element["StoreLocation"].latitude,
             element["StoreLocation"].longitude);
-        print(distance);
+        // Check distance
         if (distance / 1000 < radius) {
-          print("add Product");
+          // Add nearby product
           nearbyProducts.add(element);
         }
       }
-    });
+    }
 
-    print(allProducts.length);
-    print(nearbyProducts.length);
+    // Products filtered by location
   }
 }

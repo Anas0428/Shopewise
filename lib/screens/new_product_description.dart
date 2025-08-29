@@ -16,7 +16,7 @@ class Androidsmall1Widget extends StatefulWidget {
   final String mapsLink;
 
   Androidsmall1Widget({
-    Key? key,
+    super.key,
     required this.lat, 
     required this.long,
     this.productName = '',
@@ -24,10 +24,10 @@ class Androidsmall1Widget extends StatefulWidget {
     this.expiryDate = '',
     this.price = '',
     this.storeName = '',
-  }) : mapsLink = FlutterApi().getGoogleMapsLink(lat, long), super(key: key);
+  }) : mapsLink = FlutterApi().getGoogleMapsLink(lat, long);
 
   @override
-  _Androidsmall1WidgetState createState() => _Androidsmall1WidgetState();
+  State<Androidsmall1Widget> createState() => _Androidsmall1WidgetState();
 }
 
 class _Androidsmall1WidgetState extends State<Androidsmall1Widget> {
@@ -201,7 +201,7 @@ class _Androidsmall1WidgetState extends State<Androidsmall1Widget> {
           Positioned(
               top: 34,
               left: 31,
-              child: Container(
+              child: SizedBox(
                   width: 28,
                   height: 25,
                   child: Stack(children: <Widget>[
@@ -294,7 +294,7 @@ class _Androidsmall1WidgetState extends State<Androidsmall1Widget> {
                           },
                           style: ButtonStyle(
                             backgroundColor: MaterialStateProperty.all<Color>(
-                                Color.fromRGBO(255, 107, 83, 1)),
+                                const Color.fromRGBO(255, 107, 83, 1)),
                             shape: MaterialStateProperty.all<
                                 RoundedRectangleBorder>(RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(18.0),
@@ -304,7 +304,7 @@ class _Androidsmall1WidgetState extends State<Androidsmall1Widget> {
                             'Open on Google Maps',
                             textAlign: TextAlign.left,
                             style: GoogleFonts.josefinSans(
-                                color: Color.fromRGBO(255, 255, 255, 1),
+                                color: const Color.fromRGBO(255, 255, 255, 1),
                                 fontSize: 17,
                                 letterSpacing:
                                     0 /*percentages not used in flutter. defaulting to zero*/,
@@ -316,7 +316,7 @@ class _Androidsmall1WidgetState extends State<Androidsmall1Widget> {
           Positioned(
               top: 219,
               left: 180,
-              child: Container(
+              child: SizedBox(
                   width: 139,
                   height: 27,
                   child: Stack(children: <Widget>[
@@ -342,7 +342,7 @@ class _Androidsmall1WidgetState extends State<Androidsmall1Widget> {
                           'Tablets',
                           textAlign: TextAlign.left,
                           style: GoogleFonts.montserrat(
-                              color: Color.fromRGBO(30, 30, 30, 1),
+                              color: const Color.fromRGBO(30, 30, 30, 1),
                               fontSize: 15,
                               letterSpacing:
                                   0 /*percentages not used in flutter. defaulting to zero*/,
@@ -353,7 +353,7 @@ class _Androidsmall1WidgetState extends State<Androidsmall1Widget> {
           Positioned(
               top: 274,
               left: 179,
-              child: Container(
+              child: SizedBox(
                   width: 139,
                   height: 27,
                   child: Stack(children: <Widget>[
@@ -363,7 +363,7 @@ class _Androidsmall1WidgetState extends State<Androidsmall1Widget> {
                         child: Container(
                             width: 139,
                             height: 27,
-                            decoration: BoxDecoration(
+                            decoration: const BoxDecoration(
                               borderRadius: BorderRadius.only(
                                 topLeft: Radius.circular(10),
                                 topRight: Radius.circular(10),
@@ -379,7 +379,7 @@ class _Androidsmall1WidgetState extends State<Androidsmall1Widget> {
                           '26 - 03 - 2023',
                           textAlign: TextAlign.left,
                           style: GoogleFonts.montserrat(
-                              color: Color.fromRGBO(30, 30, 30, 1),
+                              color: const Color.fromRGBO(30, 30, 30, 1),
                               fontSize: 15,
                               letterSpacing:
                                   0 /*percentages not used in flutter. defaulting to zero*/,
@@ -390,7 +390,7 @@ class _Androidsmall1WidgetState extends State<Androidsmall1Widget> {
           Positioned(
               top: 329,
               left: 179,
-              child: Container(
+              child: SizedBox(
                   width: 139,
                   height: 27,
                   child: Stack(children: <Widget>[
@@ -400,7 +400,7 @@ class _Androidsmall1WidgetState extends State<Androidsmall1Widget> {
                         child: Container(
                             width: 139,
                             height: 27,
-                            decoration: BoxDecoration(
+                            decoration: const BoxDecoration(
                               borderRadius: BorderRadius.only(
                                 topLeft: Radius.circular(10),
                                 topRight: Radius.circular(10),
@@ -416,7 +416,7 @@ class _Androidsmall1WidgetState extends State<Androidsmall1Widget> {
                           'Rs. 2500',
                           textAlign: TextAlign.left,
                           style: GoogleFonts.montserrat(
-                              color: Color.fromRGBO(30, 30, 30, 1),
+                              color: const Color.fromRGBO(30, 30, 30, 1),
                               fontSize: 15,
                               letterSpacing:
                                   0 /*percentages not used in flutter. defaulting to zero*/,
@@ -427,7 +427,7 @@ class _Androidsmall1WidgetState extends State<Androidsmall1Widget> {
           Positioned(
               top: 384,
               left: 179,
-              child: Container(
+              child: SizedBox(
                   width: 136,
                   height: 55,
                   child: Stack(children: <Widget>[
@@ -437,7 +437,7 @@ class _Androidsmall1WidgetState extends State<Androidsmall1Widget> {
                         child: Container(
                             width: 136,
                             height: 55,
-                            decoration: BoxDecoration(
+                            decoration: const BoxDecoration(
                               borderRadius: BorderRadius.only(
                                 topLeft: Radius.circular(10),
                                 topRight: Radius.circular(10),
@@ -453,7 +453,7 @@ class _Androidsmall1WidgetState extends State<Androidsmall1Widget> {
                           'Rehman Medical Store',
                           textAlign: TextAlign.left,
                           style: GoogleFonts.montserrat(
-                              color: Color.fromRGBO(30, 30, 30, 1),
+                              color: const Color.fromRGBO(30, 30, 30, 1),
                               fontSize: 15,
                               letterSpacing:
                                   0 /*percentages not used in flutter. defaulting to zero*/,

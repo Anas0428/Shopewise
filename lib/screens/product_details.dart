@@ -5,12 +5,12 @@ class ProductDetails extends StatefulWidget {
   final Map<String, dynamic> product;
 
   const ProductDetails({
-    Key? key,
+    super.key,
     required this.product,
-  }) : super(key: key);
+  });
 
   @override
-  _ProductDetailsState createState() => _ProductDetailsState();
+  State<ProductDetails> createState() => _ProductDetailsState();
 }
 
 class _ProductDetailsState extends State<ProductDetails> {
@@ -288,28 +288,28 @@ class _ProductDetailsState extends State<ProductDetails> {
                 const Divider(thickness: 2.0),
                 
                 // Note Section
-                Row(
+                const Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.note_add,
                       color: Colors.red,
                       size: 20.0,
                     ),
-                    const SizedBox(width: 10),
+                    SizedBox(width: 10),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             "Note",
                             style: TextStyle(
                                 color: Colors.black, 
                                 fontWeight: FontWeight.bold, 
                                 fontSize: 18),
                           ),
-                          const SizedBox(height: 5),
-                          const Text(
+                          SizedBox(height: 5),
+                          Text(
                             "Do not use medicine without doctor's prescription.",
                             style: TextStyle(
                                 color: Colors.black,
@@ -327,7 +327,7 @@ class _ProductDetailsState extends State<ProductDetails> {
                 Center(
                   child: Container(
                     width: width * 0.7,
-                    constraints: BoxConstraints(
+                    constraints: const BoxConstraints(
                       maxWidth: 300,
                       minHeight: 48, // Minimum touch target
                     ),

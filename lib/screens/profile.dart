@@ -1,7 +1,7 @@
-import 'package:firedart/firedart.dart';
 import 'package:flutter/material.dart';
-import 'package:my_project/services/data.dart';
-import 'package:my_project/screens/login_screen.dart';
+import '../services/data.dart';
+import '../screens/login_screen.dart';
+import '../services/firestore_service.dart';
 
 class Profile extends StatefulWidget {
   const Profile({super.key});
@@ -17,19 +17,22 @@ class _ProfileState extends State<Profile> {
   dynamic phoneNumber;
 
   Future getprofile() async {
-    // Getting Documents from Firestore
+    // Getting Documents from Firestore using modern API
     if (appData.email != "You are not logged in") {
-      var data = Firestore.instance.collection("appData");
-      var data1 = data.document(appData.email);
-      var data2 = await data1.get();
-
-      setState(() {
-        name = data2['name'];
-        email = data2['email'];
-        phoneNumber = data2['phNo'];
-
-        //password = data2['password'];
-      });
+      try {
+        final doc =
+            await FirestoreService.getDocument("appData", appData.email);
+        if (doc != null && doc.exists) {
+          final data = doc.data() as Map<String, dynamic>;
+          setState(() {
+            name = data['name'];
+            email = data['email'];
+            phoneNumber = data['phNo'];
+          });
+        }
+      } catch (e) {
+        debugPrint("Error getting profile: $e");
+      }
     }
   }
 

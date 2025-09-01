@@ -1,15 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'screens/splash_screen.dart';
+import 'firebase_options.dart';
+import 'services/firestore_service.dart';
 
-import 'package:my_project/screens/splash_screen.dart';
-import 'package:firedart/firedart.dart';
-
-const apiKey = "AIzaSyCjZK5ojHcJQh8Sr0sdMG0Nlnga4D94FME";
-const projectId = "shopwise-86248";
 const bool isLoggedIn = false;
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  Firestore.initialize(projectId); // Establishing connection with Firestore
+
+  // Initialize Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  // Initialize Firestore Service
+  FirestoreService.initialize();
+
   runApp(const MyApp());
 }
 

@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 
-import 'package:my_project/services/firebase_database.dart';
-import 'package:my_project/widgets/card.dart';
-import 'package:my_project/widgets/navbar.dart';
+import '../services/firebase_database.dart';
+import '../widgets/navbar.dart';
+import '../widgets/product_list_widget.dart';
+import 'add_product_screen.dart';
 
 class Search extends StatefulWidget {
   const Search({super.key});
@@ -21,6 +22,9 @@ class _SearchState extends State<Search> {
   late double userlat;
   late double userlon;
   bool status1 = false;
+  
+  // Key to force ProductListWidget refresh
+  Key _productListKey = UniqueKey();
 
   int status = 0;
 
@@ -29,7 +33,6 @@ class _SearchState extends State<Search> {
   void initState() {
     super.initState();
     _scaffoldKey = GlobalKey<ScaffoldState>();
-    setProducts();
     setLocation();
   }
 
@@ -42,306 +45,265 @@ class _SearchState extends State<Search> {
             constraints: BoxConstraints(
               minHeight: constraints.maxHeight,
             ),
-            child: RefreshIndicator(
-              onRefresh: () async {
-                await setProducts();
-              },
-              child: Scaffold(
-            key: _scaffoldKey,
-            drawer: const NavBar(),
-            body: Stack(children: [
-              Container(
-                decoration: const BoxDecoration(
+            child: Scaffold(
+                key: _scaffoldKey,
+                drawer: const NavBar(),
+                floatingActionButton: FloatingActionButton(
+                  onPressed: _navigateToAddProduct,
+                  backgroundColor: Colors.blue,
+                  child: const Icon(
+                    Icons.add,
                     color: Colors.white,
-                    borderRadius: BorderRadius.only(
-                        bottomLeft: Radius.circular(40.0),
-                        bottomRight: Radius.circular(40.0))),
-              ),
-              Container(
-                  height: MediaQuery.of(context).size.height * 0.3,
-                  width: MediaQuery.of(context).size.width,
-                  decoration: const BoxDecoration(
-                      color: Colors.blue,
-                      borderRadius: BorderRadius.only(
-                          bottomLeft: Radius.circular(40.0),
-                          bottomRight: Radius.circular(40.0))),
-                  child: Column(
-                    children: [
-                      Padding(
-                        padding: EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.02),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Padding(
-                                padding: const EdgeInsets.all(12.0),
-                                child: GestureDetector(
-                                    onTap: () {
-                                      _scaffoldKey.currentState!.openDrawer();
-
-                                      // drwaer element
-                                    },
-                                    child: const Icon(Icons.menu_open_sharp,
-                                        size: 35, color: Colors.white))),
-                            Padding(
-                              padding: const EdgeInsets.all(1.0),
-                              child: PopupMenuButton(
-                                icon: const Icon(Icons.more_horiz,
-                                    size: 25, color: Colors.white),
-                                itemBuilder: (context) => [
-                                  // PopupMenuItem(
-                                  //   child: Text("Help ?"),
-                                  //   onTap: () {
-                                  //     showDialog(
-                                  //       context: context,
-                                  //       builder: (BuildContext context) {
-                                  //         return StatefulBuilder(
-                                  //           builder: (BuildContext context,
-                                  //               StateSetter setState) {
-                                  //             return AlertDialog(
-                                  //               title: const Text("Help"),
-                                  //               content: const Text(
-                                  //                   "This is a help dialog box"),
-                                  //               actions: [
-                                  //                 TextButton(
-                                  //                   onPressed: () {
-                                  //                     Navigator.of(context).pop();
-                                  //                   },
-                                  //                   child: const Text("Close"),
-                                  //                 ),
-                                  //               ],
-                                  //             );
-                                  //           },
-                                  //         );
-                                  //       },
-                                  //     );
-                                  //   },
-                                  //   value: 1,
-                                  // ),
+                    size: 28,
+                  ),
+                ),
+                body: Stack(children: [
+                  Container(
+                    decoration: const BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.only(
+                            bottomLeft: Radius.circular(40.0),
+                            bottomRight: Radius.circular(40.0))),
+                  ),
+                  Container(
+                      height: MediaQuery.of(context).size.height * 0.3,
+                      width: MediaQuery.of(context).size.width,
+                      decoration: const BoxDecoration(
+                          color: Colors.blue,
+                          borderRadius: BorderRadius.only(
+                              bottomLeft: Radius.circular(40.0),
+                              bottomRight: Radius.circular(40.0))),
+                      child: Column(
+                        children: [
+                          Padding(
+                            padding: EdgeInsets.only(
+                                top: MediaQuery.of(context).size.height *
+                                    0.02),
+                            child: Row(
+                              mainAxisAlignment:
+                                  MainAxisAlignment.spaceBetween,
+                              children: [
+                                Padding(
+                                    padding: const EdgeInsets.all(12.0),
+                                    child: GestureDetector(
+                                        onTap: () {
+                                          _scaffoldKey.currentState!
+                                              .openDrawer();
+                                        },
+                                        child: const Icon(
+                                            Icons.menu_open_sharp,
+                                            size: 35,
+                                            color: Colors.white))),
+                                Padding(
+                                  padding: const EdgeInsets.all(1.0),
+                                  child: PopupMenuButton(
+                                    icon: const Icon(Icons.more_horiz,
+                                        size: 25, color: Colors.white),
+                                    itemBuilder: (context) => [],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Flexible(
+                            child: Container(
+                              width: MediaQuery.of(context).size.width,
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 20),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    'Search for',
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: MediaQuery.of(context)
+                                                .size
+                                                .width *
+                                            0.055),
+                                  ),
+                                  Text(
+                                    'Your Medicine!',
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.normal,
+                                        fontSize: MediaQuery.of(context)
+                                                .size
+                                                .width *
+                                            0.065),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Flexible(
+                                    child: Container(
+                                      width: double.infinity,
+                                      height:
+                                          MediaQuery.of(context).size.height *
+                                              0.06,
+                                      constraints: BoxConstraints(
+                                        maxWidth: MediaQuery.of(context)
+                                                .size
+                                                .width *
+                                            0.9,
+                                        minHeight: 48,
+                                      ),
+                                      child: TextField(
+                                        controller: _searchQuery,
+                                        onSubmitted: (value) {},
+                                        onChanged: (value) async {
+                                          // The search is now handled by ProductListWidget
+                                          // This TextField just passes the search query
+                                          // The ProductListWidget will handle the filtering internally
+                                        },
+                                        decoration: InputDecoration(
+                                          prefixIcon:
+                                              const Icon(Icons.search),
+                                          suffixIcon: IconButton(
+                                              icon: const Icon(Icons
+                                                  .filter_list_off_outlined),
+                                              onPressed: () {}),
+                                          hintText: "Search",
+                                          filled: true,
+                                          fillColor: Colors.white,
+                                          border: const OutlineInputBorder(
+                                              borderRadius: BorderRadius.all(
+                                                  Radius.circular(25.0))),
+                                          hintStyle: const TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w300),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
-                          ],
-                        ),
-                      ),
-                      Flexible(
-                        child: Container(
-                          width: MediaQuery.of(context).size.width,
+                          ),
+                        ],
+                      )),
+                    
+                  Positioned(
+                    top: MediaQuery.of(context).size.height * 0.08,
+                    right: 20,
+                    child: const CircleAvatar(
+                      maxRadius: 25,
+                      minRadius: 25,
+                      backgroundColor: Colors.white,
+                      backgroundImage: AssetImage("images/man.png"),
+                    ),
+                  ),
+
+                  // Product List directly under search bar
+                  Positioned(
+                    top: MediaQuery.of(context).size.height * 0.31,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Location info
+                        Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 20),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
-                                'Search for',
+                                "Available Products",
                                 style: TextStyle(
-                                    color: Colors.white,
+                                    color: Colors.black,
                                     fontWeight: FontWeight.bold,
-                                    fontSize: MediaQuery.of(context).size.width * 0.055),
-                              ),
-                              Text(
-                                'Your Medicine!',
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.normal,
-                                    fontSize: MediaQuery.of(context).size.width * 0.065),
+                                    fontSize:
+                                        MediaQuery.of(context).size.width * 0.055),
                               ),
                               const SizedBox(height: 10),
-                              Flexible(
-                                child: Container(
-                                  width: double.infinity,
-                                  height: MediaQuery.of(context).size.height * 0.06,
-                                  constraints: BoxConstraints(
-                                    maxWidth: MediaQuery.of(context).size.width * 0.9,
-                                    minHeight: 48, // Minimum touch target
+                              Row(
+                                children: [
+                                  const Icon(
+                                    Icons.location_on,
+                                    color: Colors.black,
+                                    size: 20,
                                   ),
-                                  child: TextField(
-                                    controller: _searchQuery,
-                                    onSubmitted: (value) {},
-                                    onChanged: (value) {
-                                      // Filtering the Products
-                                      setState(() {
-                                        if (value == "" && status == 0) {
-                                          searchedProducts = allProducts;
-                                        }
-                                        if (value != "" && status == 0) {
-                                          searchedProducts = allProducts
-                                              .where((element) => element["Name"]
-                                                  .toString()
-                                                  .toLowerCase()
-                                                  .contains(value.toLowerCase()))
-                                              .toList();
-                                        }
-                                      });
-                                    },
-                                    decoration: InputDecoration(
-                                      prefixIcon: const Icon(Icons.search),
-                                      suffixIcon: IconButton(
-                                          icon: const Icon(Icons.filter_list_off_outlined),
-                                          onPressed: () {}),
-                                      hintText: "Search",
-                                      filled: true,
-                                      fillColor: Colors.white,
-                                      border: const OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.all(Radius.circular(25.0))),
-                                      hintStyle: const TextStyle(
-                                          fontSize: 16, fontWeight: FontWeight.w300),
+                                  const SizedBox(width: 5),
+                                  Expanded(
+                                    child: Text(
+                                      fullAddress,
+                                      style: const TextStyle(
+                                          color: Colors.black,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16),
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
                                     ),
                                   ),
-                                ),
+                                ],
                               ),
                             ],
                           ),
                         ),
-                      ),
-                    ],
-                  )),
-
-            Positioned(
-              top: MediaQuery.of(context).size.height * 0.31,
-              left: 20,
-              right: 20,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "Search Results",
-                    style: TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                        fontSize: MediaQuery.of(context).size.width * 0.055),
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.location_on,
-                        color: Colors.black,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 5),
-                      Expanded(
-                        child: Text(
-                          fullAddress,
-                          style: const TextStyle(
-                              color: Colors.black,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16),
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
+                        
+                        const SizedBox(height: 16),
+                        
+                        // Product List Widget
+                        Expanded(
+                          child: ProductListWidget(
+                            key: _productListKey,
+                            searchQuery: _searchQuery.text.isEmpty ? null : _searchQuery.text,
+                            onRefresh: () {
+                              // Clear search when refreshing
+                              _searchQuery.clear();
+                              setState(() {
+                                searchedProducts = allProducts;
+                              });
+                            },
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ],
-              ),
-            ),
-
-            Positioned(
-              top: MediaQuery.of(context).size.height * 0.08,
-              right: 20,
-              child: const CircleAvatar(
-                maxRadius: 25,
-                minRadius: 25,
-                backgroundColor: Colors.white,
-                backgroundImage: AssetImage("images/man.png"),
-              ),
-            ),
-            // Padding(
-            //   padding: const EdgeInsets.only(top: 250.0, left: 80),
-            //   // ignore: avoid_unnecessary_containers
-            //   child: Container(
-            //     child: ToggleSwitch(
-            //       minWidth: 110.0,
-            //       cornerRadius: 20.0,
-            //       activeBgColors: [
-            //         [Colors.blue],
-            //         [Colors.blue],
-            //       ],
-            //       activeFgColor: Colors.white,
-            //       inactiveBgColor: Colors.green,
-            //       inactiveFgColor: Colors.white,
-            //       initialLabelIndex: 0,
-            //       totalSwitches: 2,
-            //       labels: ['All Products', 'Nearby'],
-            //       radiusStyle: true,
-            //       onToggle: (index) {
-            //         searchQuery(index!);
-            //       },
-            //     ),
-            //   ),
-            // ),
-
-            // Padding(
-            //   padding: const EdgeInsets.only(left: 80, bottom: 160),
-            //   child: FlutterSwitch(
-            //     width: 105.0,
-            //     height: 40.0,
-            //     valueFontSize: 25.0,
-            //     toggleSize: 45.0,
-            //     value: status1,
-            //     borderRadius: 30.0,
-            //     padding: 8.0,
-            //     showOnOff: true,
-            //     onToggle: (val) {
-            //       setState(() {
-            //         status1 = val;
-            //         print(status1);
-            //       });
-            //     },
-            //   ),
-            // ),
-
-            Positioned(
-              top: MediaQuery.of(context).size.height * 0.4,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: ListView.builder(
-                  padding: const EdgeInsets.only(top: 10),
-                  itemCount: status == 0
-                      ? searchedProducts.length
-                      : nearbyProducts.length,
-                  itemBuilder: (context, index) {
-                    if (status == 0) {
-                      // ALL Products
-                      return CardView(
-                        productList: searchedProducts[index],
-                      );
-                    } else {
-                      // NearBy Products
-
-                      return CardView(
-                        productList: nearbyProducts[index],
-                      );
-                    }
-                  }),
-            )
-          ])),
-            ),
+                ])),
           ),
         );
       },
     );
   }
 
+  Future<void> _navigateToAddProduct() async {
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const AddProductScreen(),
+      ),
+    );
+    
+    // If a product was successfully added, refresh the product list
+    if (result == true) {
+      // Generate a new key to force ProductListWidget to refresh
+      setState(() {
+        _productListKey = UniqueKey();
+      });
+      
+      // Show a confirmation message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Product list refreshed!'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    }
+  }
+
   Future<void> setLocation() async {
     var position = await FlutterApi().getPosition();
-    var address = await FlutterApi().getAddress(position.latitude, position.longitude);
+    var address =
+        await FlutterApi().getAddress(position.latitude, position.longitude);
 
     setState(() {
       fullAddress = address;
-      txt.text = fullAddress;
       userlat = position.latitude;
       userlon = position.longitude;
-    });
-  }
-
-  Future<void> setProducts() async {
-    var products = await FlutterApi().getAllProducts();
-    setState(() {
-      allProducts = products;
-      searchedProducts = products;
     });
   }
 
@@ -350,7 +312,6 @@ class _SearchState extends State<Search> {
     setState(() {
       status = index;
     });
-    // Status updated
 
     if (index == 0) return;
 
@@ -373,7 +334,5 @@ class _SearchState extends State<Search> {
         }
       }
     }
-
-    // Products filtered by location
   }
 }

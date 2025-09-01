@@ -1,13 +1,14 @@
 // Firebase User
 
-import 'package:firedart/firedart.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../services/firestore_service.dart';
 // import 'package:geolocator/geolocator.dart';
 // import 'package:geocoding/geocoding.dart';
 import 'package:encrypt/encrypt.dart' as ee;
 import 'package:email_validator/email_validator.dart';
 
-const apiKey = "AIzaSyCjZK5ojHcJQh8Sr0sdMG0Nlnga4D94FME";
-const projectId = "shopwise-86248";
+const apiKey = "AIzaSyAeAuqTXFXec3UHa6NFLC9GHaD4IK7RXUg";
+const projectId = "searchaholic-86248";
 
 class User {
   // Instance Variables
@@ -30,9 +31,7 @@ class User {
     // Function called to set location
 
     try {
-      Firestore.instance.collection("appData");
-
-      await Firestore.instance.collection("appData").document(email).set({
+      await FirestoreService.updateDocument("appData", email, {
         "location": GeoPoint(lat, lon),
       });
       // Location set successfully
@@ -45,18 +44,19 @@ class User {
 // --------------------------
 // ---- GET LOCATION --------
 // --------------------------
-  Future<Document> getLocation() async {
+  Future<DocumentSnapshot?> getLocation() async {
     // Getting the User Location if exists
     // return the document if exists
-    if (await Firestore.instance.collection("appData").document(email).exists) {
-      var data = Firestore.instance.collection("appData").document(email).get();
-
-      // Process location data if needed
-
-      return Future<Document>.value(data);
-    } else {
-      // No location data found for user
-      throw Exception("No Data Found");
+    try {
+      final doc = await FirestoreService.getDocument("appData", email);
+      if (doc != null && doc.exists) {
+        return doc;
+      } else {
+        // No location data found for user
+        throw Exception("No Data Found");
+      }
+    } catch (e) {
+      throw Exception("Error getting location: $e");
     }
   }
 
@@ -65,23 +65,21 @@ class User {
 // --------------------------
   Future<bool> register() async {
     // Registering the user
-
-    if (await Firestore.instance.collection("appData").document(email).exists) {
-      // User already exists in database
-      return Future<bool>.value(false);
-    } else {
-      try {
-        Firestore.instance.collection("appData");
-        await Firestore.instance.collection("appData").document(email).set({
+    try {
+      if (await FirestoreService.documentExists("appData", email)) {
+        // User already exists in database
+        return Future<bool>.value(false);
+      } else {
+        await FirestoreService.setDocument("appData", email, {
           "email": email,
           "password": password,
           "phNo": phNo,
         });
         // User registered successfully
         return Future<bool>.value(true);
-      } catch (e) {
-        return Future<bool>.value(false);
       }
+    } catch (e) {
+      return Future<bool>.value(false);
     }
   }
 
@@ -90,21 +88,23 @@ class User {
 // --------------------------
   Future<bool> login() async {
     // Login the user
+    try {
+      final doc = await FirestoreService.getDocument("appData", email);
+      if (doc != null && doc.exists) {
+        final data = doc.data() as Map<String, dynamic>;
 
-    if (await Firestore.instance.collection("appData").document(email).exists) {
-      var data =
-          await Firestore.instance.collection("appData").document(email).get();
-      var password = decrypt(data["password"]);
-
-      if (data["password"] == password) {
-        // Login successful
-        return Future<bool>.value(true);
+        if (data["password"] == password) {
+          // Login successful
+          return Future<bool>.value(true);
+        } else {
+          // Incorrect password provided
+          return Future<bool>.value(false);
+        }
       } else {
-        // Incorrect password provided
+        // User not found in database
         return Future<bool>.value(false);
       }
-    } else {
-      // User not found in database
+    } catch (e) {
       return Future<bool>.value(false);
     }
   }
@@ -166,9 +166,6 @@ class User {
     bool hasLowercase = password.contains(RegExp(r'[a-z]'));
     bool hasMinLength = password.length >= minLength;
 
-    return hasDigits &
-        hasUppercase &
-        hasLowercase &
-        hasMinLength;
+    return hasDigits & hasUppercase & hasLowercase & hasMinLength;
   }
 }

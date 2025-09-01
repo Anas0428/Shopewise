@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:my_project/services/firebase_database.dart';
+import '../services/firebase_database.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class Androidsmall1Widget extends StatefulWidget {
@@ -17,7 +17,7 @@ class Androidsmall1Widget extends StatefulWidget {
 
   Androidsmall1Widget({
     super.key,
-    required this.lat, 
+    required this.lat,
     required this.long,
     this.productName = '',
     this.productCategory = '',

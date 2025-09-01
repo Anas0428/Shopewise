@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 
-import 'package:my_project/services/firebase_database.dart';
-import 'package:my_project/screens/login_screen.dart';
-
-// import 'package:rounded_loading_button/rounded_loading_button.dart'; // Disabled due to compatibility
-
+import '../services/firebase_database.dart';
+import 'login_screen.dart';
 
 class Registration extends StatefulWidget {
   const Registration({super.key});
@@ -21,23 +18,6 @@ class _RegistrationState extends State<Registration> {
   var phoneNumber = TextEditingController();
   var password = TextEditingController();
   var otp = TextEditingController();
-  // final RoundedLoadingButtonController _btnController =
-  //     RoundedLoadingButtonController(); // Disabled due to compatibility
-
-  // void onClickFun(RoundedLoadingButtonController btnController) {
-  //   Timer(Duration(seconds: 3), () {
-  //     _btnController.success();
-  //   });
-  // }
-
-  // void onClickFun2(RoundedLoadingButtonController btnController) async {
-  //   Timer(Duration(seconds: 2), () {
-  //     _btnController.error();
-  //     Future.delayed(Duration(seconds: 1));
-  //     _btnController.reset();
-  //   });
-  // }
-
   bool _isObscure = true;
   GlobalKey<FormState> formkey = GlobalKey<FormState>();
   double height = 0, width = 0;
@@ -314,22 +294,99 @@ class _RegistrationState extends State<Registration> {
                       onPressed: () async {
                         var object1 = FlutterApi();
                         if (formkey.currentState!.validate()) {
-                          if (await object1.register(email.text, name.text,
-                                  phoneNumber.text, password.text) ==
-                              true) {
-                            // Successfully added data
+                          // Show loading indicator
+                          showDialog(
+                            context: context,
+                            barrierDismissible: false,
+                            builder: (BuildContext context) {
+                              return const AlertDialog(
+                                content: Row(
+                                  children: [
+                                    CircularProgressIndicator(),
+                                    SizedBox(width: 20),
+                                    Text("Registering..."),
+                                  ],
+                                ),
+                              );
+                            },
+                          );
+
+                          try {
+                            bool registrationResult = await object1.register(
+                                email.text,
+                                name.text,
+                                phoneNumber.text,
+                                password.text);
+
+                            // Hide loading dialog
                             if (context.mounted) {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => const Login()),
+                              Navigator.of(context).pop();
+                            }
+
+                            if (registrationResult == true) {
+                              // Successfully added data
+                              if (context.mounted) {
+                                // Show success message
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                        'Registration successful! Please login.'),
+                                    backgroundColor: Colors.green,
+                                  ),
+                                );
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => const Login()),
+                                );
+                              }
+                            } else {
+                              // Registration failed - user already exists
+                              if (context.mounted) {
+                                showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return AlertDialog(
+                                      title: const Text('Registration Failed'),
+                                      content: const Text(
+                                          'Email already exists. Please use a different email or try logging in.'),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.of(context).pop(),
+                                          child: const Text('OK'),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+                              }
+                            }
+                          } catch (e) {
+                            // Hide loading dialog if still showing
+                            if (context.mounted) {
+                              Navigator.of(context).pop();
+                              // Show error message
+                              showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return AlertDialog(
+                                    title: const Text('Connection Error'),
+                                    content: const Text(
+                                        'Unable to connect to the server. Please check your internet connection and try again.'),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.of(context).pop(),
+                                        child: const Text('OK'),
+                                      ),
+                                    ],
+                                  );
+                                },
                               );
                             }
-                          } else {
-                            // Registration failed
-                            // Error handling
                           }
                         }
-
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blue,
@@ -370,12 +427,12 @@ class _RegistrationState extends State<Registration> {
                                 color: Color.fromRGBO(53, 108, 254, 1)),
                             recognizer: TapGestureRecognizer()
                               ..onTap = () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) => const Login()),
-                                    );
-                                  })
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => const Login()),
+                                );
+                              })
                       ]),
                 ),
               ),

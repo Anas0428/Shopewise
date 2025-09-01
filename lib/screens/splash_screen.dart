@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
 import 'package:flutter_spinkit/flutter_spinkit.dart';
-import 'package:my_project/screens/login_screen.dart';
+import 'login_screen.dart';
+import 'debug_firebase_screen.dart';
 
 class Splash extends StatefulWidget {
   const Splash({super.key});
@@ -23,7 +24,8 @@ class _SplashState extends State<Splash> {
       Navigator.pushReplacement(
         context,
         PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) => const Login(),
+          pageBuilder: (context, animation, secondaryAnimation) =>
+              const Login(),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             return FadeTransition(
               opacity: animation,
@@ -43,13 +45,25 @@ class _SplashState extends State<Splash> {
         return SafeArea(
           child: Scaffold(
             backgroundColor: Colors.white,
+            floatingActionButton: FloatingActionButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const DebugFirebaseScreen(),
+                  ),
+                );
+              },
+              backgroundColor: Colors.blue,
+              child: const Icon(Icons.bug_report, color: Colors.white),
+            ),
             body: SizedBox(
               width: double.infinity,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Image(
-                    image: const AssetImage("images/logo3.png"), 
+                    image: const AssetImage("images/logo3.png"),
                     width: MediaQuery.of(context).size.width * 0.6,
                     height: MediaQuery.of(context).size.height * 0.3,
                     fit: BoxFit.contain,

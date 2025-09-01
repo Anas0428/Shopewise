@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "915941234935",
+    "firebase_url": "https://searchaholic-86248-default-rtdb.firebaseio.com",
+    "project_id": "searchaholic-86248",
+    "storage_bucket": "searchaholic-86248.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:915941234935:android:e47d016c97443917311bf2",
+        "android_client_info": {
+          "package_name": "Searchaholic.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAeAuqTXFXec3UHa6NFLC9GHaD4IK7RXUg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,15 +1,15 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
-import 'package:my_project/services/data.dart';
-import 'package:my_project/screens/registration.dart';
-import 'package:my_project/screens/search_screen.dart';
+import '../services/data.dart';
+import '../screens/registration.dart';
+import '../screens/search_screen.dart';
 import 'package:quickalert/quickalert.dart';
 
 import 'package:form_field_validator/form_field_validator.dart';
 // import 'package:rounded_loading_button/rounded_loading_button.dart'; // Disabled due to compatibility
 
-import 'package:my_project/services/firebase_database.dart';
+import '../services/firebase_database.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -32,7 +32,6 @@ class _LoginState extends State<Login> {
   //     _btnController.success();
   //   });
   // }
-
 
   // void onClickFun2(RoundedLoadingButtonController btnController) async {
   //   Timer(Duration(seconds: 2), () {
@@ -146,10 +145,10 @@ class _LoginState extends State<Login> {
                                                 size: 25,
                                                 color: Colors.white)),
                                       ),
-                        const Padding(
-                            padding: EdgeInsets.all(12.0),
-                            child: Icon(Icons.more_horiz,
-                                size: 25, color: Colors.white)),
+                                      const Padding(
+                                          padding: EdgeInsets.all(12.0),
+                                          child: Icon(Icons.more_horiz,
+                                              size: 25, color: Colors.white)),
                                     ],
                                   ),
                                 ),
@@ -319,7 +318,7 @@ class _LoginState extends State<Login> {
                                   onPressed: () async {
                                     // Tempo
                                     formkey.currentState?.validate();
-                      var objectFlutterApi = FlutterApi();
+                                    var objectFlutterApi = FlutterApi();
                                     var object = LoginCheck(email, password);
 
                                     if (object.validator() == "emptyEmail" ||
@@ -342,7 +341,8 @@ class _LoginState extends State<Login> {
                                         Navigator.push(
                                           context,
                                           MaterialPageRoute(
-                                              builder: (context) => const Search()),
+                                              builder: (context) =>
+                                                  const Search()),
                                         );
                                         myalert1();
                                       });
@@ -361,7 +361,8 @@ class _LoginState extends State<Login> {
                                   style: ElevatedButton.styleFrom(
                                       backgroundColor: Colors.blue,
                                       shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(30))),
+                                          borderRadius:
+                                              BorderRadius.circular(30))),
                                   child: const Text(
                                     "Login",
                                     style: TextStyle(

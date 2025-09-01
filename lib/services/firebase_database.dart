@@ -3,41 +3,52 @@
 // import 'dart:convert';
 // import 'package:alert/alert.dart';
 
-import 'package:firedart/firedart.dart';
-import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
+import 'local_auth.dart';
+import 'firestore_service.dart';
 
-const api_key = "AIzaSyCjZK5ojHcJQh8Sr0sdMG0Nlnga4D94FME";
-const project_id = "shopwise-86248";
-// const api_key = "AIzaSyBg4u6aeIDzvj4ZfPSnTGAzNBDR5sbui_U";
-// const project_id = "shopwise-3f04a";
+const api_key = "AIzaSyAeAuqTXFXec3UHa6NFLC9GHaD4IK7RXUg";
+const project_id = "searchaholic-86248";
+// const api_key = "AIzaSyCjZK5ojHcJQh8Sr0sdMG0Nlnga4D94FME";
+// const project_id = "shopwise-86248";
 
 class FlutterApi {
-  // Main Function
-  void main() async {
-    WidgetsFlutterBinding.ensureInitialized();
-    Firestore.initialize(project_id); // Establishing connection with Firestore
-    print("Firestore Initialized");
-  }
+  // Note: Firestore is now initialized in main.dart using FirestoreService.initialize()
+  // No need to call old Firestore.initialize() anymore
 
-  // checking login of members
+  // checking login of members - Local credentials checked first, then Firebase
   Future<bool> check_login(String email, String password) async {
-    // Getting the User Collection
-    final managers = Firestore.instance.collection("appData");
+    // First, check local credentials
+    bool isLocalAuth =
+        await LocalAuthService.checkLocalCredentials(email, password);
+    if (isLocalAuth) {
+      print("Local authentication successful for: $email");
+      return Future<bool>.value(true);
+    }
 
-    final manager = managers.document(email);
-    print(manager);
+    // If local auth fails, proceed with Firebase authentication
+    print("Local authentication failed, trying Firebase authentication...");
 
-    // Getting the Data from the Document
+    // Getting the User Document using modern Firestore API
     try {
-      final data = await manager.get();
-      if (data['password'] == password && data['email'] == email) {
-        return Future<bool>.value(true);
+      final doc = await FirestoreService.getDocument("appData", email);
+      if (doc != null && doc.exists) {
+        final data = doc.data() as Map<String, dynamic>;
+        if (data['password'] == password && data['email'] == email) {
+          print("Firebase authentication successful for: $email");
+          return Future<bool>.value(true);
+        } else {
+          print("Firebase authentication failed for: $email");
+          return Future<bool>.value(false);
+        }
       } else {
+        print("User not found in Firebase: $email");
         return Future<bool>.value(false);
       }
     } catch (e) {
+      print("Firebase authentication error: $e");
       return Future<bool>.value(false);
     }
   }
@@ -45,25 +56,23 @@ class FlutterApi {
   // Registration
   Future<bool> register(
       String email, String storeName, String phNo, String password) async {
-    // Splitting the Location
-
-    // Checking if the email is already registered
-    final managers = Firestore.instance.collection("appData");
-
-    // Checking for the document with the email
-    if (await managers.document(email).exists) {
+    try {
+      // Checking if the email is already registered
+      if (await FirestoreService.documentExists("appData", email)) {
+        return Future<bool>.value(false);
+      } else {
+        // Creating a new document with the email using modern API
+        await FirestoreService.setDocument("appData", email, {
+          'email': email,
+          'name': storeName,
+          'phNo': phNo,
+          'password': password,
+        });
+        return Future<bool>.value(true);
+      }
+    } catch (e) {
+      print("Registration error: $e");
       return Future<bool>.value(false);
-    } else {
-      // Creating a new document with the email
-      final manager = managers.document(email);
-      // Adding the data to the document
-      await manager.set({
-        'email': email,
-        'name': storeName,
-        'phNo': phNo,
-        'password': password,
-      });
-      return Future<bool>.value(true);
     }
   }
 
@@ -119,45 +128,76 @@ class FlutterApi {
   }
 
   Future<List> getAllProducts() async {
-    // We have products collection which contains all the products againt each storeid
-    final storeIds = await Firestore.instance.collection("Products").get();
-    final allProducts = [];
+    try {
+      print("🔄 FlutterApi: Getting all products from nested structure...");
+      
+      // Get all user documents from Products collection
+      final userSnapshot = await FirestoreService.getCollection("Products");
+      final allProducts = <Map<String, dynamic>>[];
 
-    for (var store in storeIds) {
-      final products = await store.reference.get();
+      print("📁 FlutterApi: Found ${userSnapshot.docs.length} user documents");
 
-      for (var product in products.map.values) {
-        allProducts.add(product);
+      // Loop through each user document
+      for (var userDoc in userSnapshot.docs) {
+        try {
+          // Get the products subcollection for this user
+          final productsSubcollection = userDoc.reference.collection('products');
+          final productsSnapshot = await productsSubcollection.get();
+
+          print("👤 FlutterApi: User ${userDoc.id}: Found ${productsSnapshot.docs.length} products");
+
+          // Add each product to the main list
+          for (var productDoc in productsSnapshot.docs) {
+            final data = productDoc.data();
+            data['id'] = productDoc.id; // Add product document ID
+            data['userId'] = userDoc.id; // Add user ID for reference
+            allProducts.add(data);
+          }
+        } catch (e) {
+          print("⚠️ FlutterApi: Error getting products for user ${userDoc.id}: $e");
+          // Continue with other users even if one fails
+        }
       }
+
+      print("✅ FlutterApi: Retrieved total of ${allProducts.length} products");
+      return Future<List>.value(allProducts);
+    } catch (e) {
+      print("❌ FlutterApi: Error getting all products: $e");
+      return Future<List>.value([]);
     }
-    return Future<List>.value(allProducts);
   }
 
   Future<void> searchQuery(
       String query, double latitude, double longitude) async {
-    // Getting the products with productName and within 10 km radius
+    try {
+      // Getting the products with productName and within 10 km radius
+      final querySnapshot = await FirestoreService.getCollection("Products");
 
-    final storeIds = await Firestore.instance.collection("Products").get();
-
-    for (var store in storeIds) {
-      final products = await store.reference.get();
-
-      for (var product in products.map.values) {
+      for (var doc in querySnapshot.docs) {
+        final product = doc.data() as Map<String, dynamic>;
         // Checking if the product name contains the query
-        if (product['Name'].toString().contains(query)) {
+        if (product['Name']
+                ?.toString()
+                .toLowerCase()
+                .contains(query.toLowerCase()) ==
+            true) {
           print(product['Name']);
         }
       }
+    } catch (e) {
+      print("Error in searchQuery: $e");
     }
   }
 
-  Future<Document> getStorePosition(String storeEmail) async {
-    var StoreDetails = await Firestore.instance
-        .collection(storeEmail)
-        .document("Store Details")
-        .get();
-
-    return Future<Document>.value(StoreDetails["storeLocation"]);
+  Future<DocumentSnapshot?> getStorePosition(String storeEmail) async {
+    try {
+      var storeDetails =
+          await FirestoreService.getDocument(storeEmail, "Store Details");
+      return storeDetails;
+    } catch (e) {
+      print("Error getting store position: $e");
+      return null;
+    }
   }
 
   String getGoogleMapsLink(lattitude, longitude) {

@@ -13,10 +13,10 @@ class Product {
   final String storeEmail;
   final GeoPoint? storeLocation;
   final String type;
-  final String userId;
   final String documentId;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+  final bool isActive;
 
   Product({
     required this.id,
@@ -31,15 +31,16 @@ class Product {
     this.storeEmail = '',
     this.storeLocation,
     required this.type,
-    required this.userId,
     required this.documentId,
     this.createdAt,
     this.updatedAt,
+    this.isActive = true,
   });
 
-  /// Factory constructor to create a Product from Firestore data
+  /// Factory constructor to create a Product from centralized Firestore data
+  /// No longer requires userId as products are stored centrally
   factory Product.fromFirestore(
-      Map<String, dynamic> data, String userId, String documentId) {
+      Map<String, dynamic> data, String documentId) {
     // Parse price with fallback to 0
     double parsePrice(dynamic value) {
       if (value == null) return 0.0;
@@ -96,7 +97,7 @@ class Product {
       expire:
           parseExpire(data['Expire'] ?? data['expire'] ?? data['expiryDate']),
       productId: data['ProductID'] ?? data['productId'] ?? documentId,
-      storeId: data['StoreId'] ?? data['storeId'] ?? userId,
+      storeId: data['StoreId'] ?? data['storeId'] ?? 'unknown_store',
       storeName: data['StoreName'] ??
           data['storeName'] ??
           data['store'] ??
@@ -105,14 +106,18 @@ class Product {
           data['storeEmail'] ?? data['store_email'] ?? data['email'] ?? '',
       storeLocation: data['StoreLocation'] ?? data['storeLocation'],
       type: data['Type'] ?? data['type'] ?? 'Unknown',
-      userId: userId,
       documentId: documentId,
       createdAt: data['createdAt'] is Timestamp
           ? (data['createdAt'] as Timestamp).toDate()
-          : null,
+          : data['createdAt'] is String
+              ? DateTime.tryParse(data['createdAt'])
+              : null,
       updatedAt: data['updatedAt'] is Timestamp
           ? (data['updatedAt'] as Timestamp).toDate()
-          : null,
+          : data['updatedAt'] is String
+              ? DateTime.tryParse(data['updatedAt'])
+              : null,
+      isActive: data['isActive'] ?? true,
     );
   }
 
@@ -181,10 +186,10 @@ class Product {
     String? storeEmail,
     GeoPoint? storeLocation,
     String? type,
-    String? userId,
     String? documentId,
     DateTime? createdAt,
     DateTime? updatedAt,
+    bool? isActive,
   }) {
     return Product(
       id: id ?? this.id,
@@ -199,10 +204,10 @@ class Product {
       storeEmail: storeEmail ?? this.storeEmail,
       storeLocation: storeLocation ?? this.storeLocation,
       type: type ?? this.type,
-      userId: userId ?? this.userId,
       documentId: documentId ?? this.documentId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      isActive: isActive ?? this.isActive,
     );
   }
 
@@ -217,11 +222,11 @@ class Product {
     return other is Product &&
         other.id == id &&
         other.documentId == documentId &&
-        other.userId == userId;
+        other.storeId == storeId;
   }
 
   @override
   int get hashCode {
-    return id.hashCode ^ documentId.hashCode ^ userId.hashCode;
+    return id.hashCode ^ documentId.hashCode ^ storeId.hashCode;
   }
 }

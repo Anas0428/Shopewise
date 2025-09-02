@@ -9,16 +9,16 @@ class FirestoreService {
   static CollectionReference? _usersRef;
   static CollectionReference? _appDataRef;
 
-  /// Initialize Firestore service
+  /// Initialize Firestore service with centralized products collection
   static void initialize() {
     try {
       _firestore = FirebaseFirestore.instance;
-      _productsRef = _firestore!.collection('Products');
+      _productsRef = _firestore!.collection('products');
       _usersRef = _firestore!.collection('users');
       _appDataRef = _firestore!.collection('appData');
 
       if (kDebugMode) {
-        print('✅ Firestore Service initialized successfully');
+        print('✅ Firestore Service initialized with centralized products collection');
       }
     } catch (e) {
       if (kDebugMode) {
@@ -37,9 +37,9 @@ class FirestoreService {
     return _appDataRef ?? FirebaseFirestore.instance.collection('appData');
   }
 
-  /// Get Products collection reference
+  /// Get centralized products collection reference
   static CollectionReference get productsCollection {
-    return _productsRef ?? FirebaseFirestore.instance.collection('Products');
+    return _productsRef ?? FirebaseFirestore.instance.collection('products');
   }
 
   /// Get users collection reference
@@ -82,136 +82,54 @@ class FirestoreService {
     }
   }
 
-  /// Get all products from Firestore with comprehensive sub-collection detection
-  /// Structure: Products (collection) -> User Documents -> Product Sub-collections -> Product Documents
-  /// Automatically discovers all sub-collections under each user document
+  /// Get all products from centralized products collection
+  /// New structure: products (collection) -> product documents
+  /// No user-specific filtering - all products are globally accessible
   static Future<List<Map<String, dynamic>>> getAllProductsList() async {
     try {
       if (_productsRef == null) {
         throw Exception('Firestore service not initialized');
       }
 
-      final productsList = <Map<String, dynamic>>[];
-      
       if (kDebugMode) {
-        print('🔍 Starting comprehensive product discovery...');
-        print('=' * 60);
+        print('🔍 Fetching products from centralized collection...');
       }
       
-      // Start with Products collection and get all user documents
-      final userSnapshot = await _productsRef!.get();
+      // Get all products directly from the centralized collection
+      final productsSnapshot = await _productsRef!.get();
+      final productsList = <Map<String, dynamic>>[];
 
-      if (userSnapshot.docs.isEmpty) {
+      if (productsSnapshot.docs.isEmpty) {
         if (kDebugMode) {
-          print('❌ No user documents found in Products collection');
-          print('🗂️ Database Structure Check:');
-          print('   - Products collection exists but is empty');
-          print('   - Expected structure: Products/{userId}/{subCollections}/{productDocs}');
+          print('❌ No products found in centralized products collection');
         }
         return [];
       }
 
-      if (kDebugMode) {
-        print('📁 Found ${userSnapshot.docs.length} user documents in Products collection');
-        print('🔍 Now checking each user document for sub-collections...');
-        print('');
-      }
-      
-      int totalUsersProcessed = 0;
-      int usersWithProducts = 0;
-      
-      // Loop through each user document in the Products collection
-      for (final userDoc in userSnapshot.docs) {
-        totalUsersProcessed++;
-        int userProductCount = 0;
-        bool foundProductsForUser = false;
-        
-        if (kDebugMode) {
-          print('👤 Processing User $totalUsersProcessed/${userSnapshot.docs.length}: ${userDoc.id}');
-        }
-
+      for (final productDoc in productsSnapshot.docs) {
         try {
-          final userData = userDoc.data() as Map<String, dynamic>;
+          final productData = productDoc.data() as Map<String, dynamic>;
           
-          // Strategy 1: Check for embedded products in user document
-          if (userData.containsKey('products') && userData['products'] is Map) {
-            final productsMap = Map<String, dynamic>.from(userData['products'] as Map);
-            if (kDebugMode) {
-              print('  📦 Found embedded products map with ${productsMap.length} items');
-            }
-            
-            productsMap.forEach((productId, productData) {
-              if (productData is Map) {
-                final mappedProduct = _mapProductData(
-                  Map<String, dynamic>.from(productData), 
-                  productId, 
-                  userDoc.id, 
-                  productId,
-                  userData
-                );
-                productsList.add(mappedProduct);
-                userProductCount++;
-                foundProductsForUser = true;
-                
-                if (kDebugMode) {
-                  print('  ✅ Added product: ${mappedProduct['Name']} from embedded products');
-                }
-              }
-            });
-          }
+          // Map the product data with defensive programming
+          final mappedProduct = _mapCentralizedProductData(
+            productData,
+            productDoc.id,
+          );
           
-          // Strategy 2: Comprehensive sub-collection discovery
-          final subCollectionResults = await _discoverSubCollections(userDoc, userData);
-          userProductCount += subCollectionResults['productCount'] as int;
-          if (subCollectionResults['foundProducts'] as bool) {
-            foundProductsForUser = true;
-          }
-          productsList.addAll(subCollectionResults['products'] as List<Map<String, dynamic>>);
-          
-          if (foundProductsForUser) {
-            usersWithProducts++;
-          }
-          
-          if (kDebugMode) {
-            if (foundProductsForUser) {
-              print('  ✅ User ${userDoc.id}: Found $userProductCount products total');
-            } else {
-              print('  ❌ User ${userDoc.id}: No products found in any sub-collections');
-            }
-            print(''); // Add spacing between users
+          // Only add valid products
+          if (_isValidProduct(mappedProduct)) {
+            productsList.add(mappedProduct);
           }
         } catch (e) {
           if (kDebugMode) {
-            print('  ⚠️ Error processing user ${userDoc.id}: $e');
-            print('');
+            print('⚠️ Error processing product ${productDoc.id}: $e');
           }
+          continue;
         }
       }
 
       if (kDebugMode) {
-        print('=' * 60);
-        print('📊 FINAL RESULTS:');
-        print('   Total users processed: $totalUsersProcessed');
-        print('   Users with products: $usersWithProducts');
-        print('   Total products found: ${productsList.length}');
-        
-        if (productsList.isEmpty) {
-          print('');
-          print('🚨 NO PRODUCTS FOUND!');
-          print('💡 Possible reasons:');
-          print('   1. No sub-collections exist under user documents');
-          print('   2. Sub-collections exist but are empty');
-          print('   3. Sub-collection names don\'t match expected patterns');
-          print('   4. Products are stored in a different structure');
-          print('');
-          print('🔍 To debug further:');
-          print('   - Check your Firestore console for the actual structure');
-          print('   - Verify sub-collection names under user documents');
-          print('   - Ensure product documents have data');
-        } else {
-          print('   Sample product: ${productsList.first['Name']} (${productsList.first['id']})');
-        }
-        print('=' * 60);
+        print('✅ Retrieved ${productsList.length} products from centralized collection');
       }
 
       return productsList;
@@ -418,7 +336,7 @@ class FirestoreService {
     return false;
   }
 
-  /// Helper method to map product data with consistent field structure
+  /// Helper method to map product data with consistent field structure (legacy)
   static Map<String, dynamic> _mapProductData(
     Map<String, dynamic> productData, 
     String productId, 
@@ -477,6 +395,224 @@ class FirestoreService {
       'updatedAt': productData['updatedAt'],
       
     };
+  }
+
+  /// Map centralized product data with robust error handling
+  /// Removes user-specific context and focuses on global product accessibility
+  static Map<String, dynamic> _mapCentralizedProductData(
+    Map<String, dynamic> productData,
+    String documentId,
+  ) {
+    // Helper function to safely parse numeric values
+    double safeParseDouble(dynamic value, double defaultValue) {
+      if (value == null) return defaultValue;
+      if (value is double) return value;
+      if (value is int) return value.toDouble();
+      if (value is String) {
+        try {
+          // Remove currency symbols and whitespace
+          final cleanValue = value.replaceAll(RegExp(r'[^\d.]'), '');
+          return double.parse(cleanValue);
+        } catch (_) {
+          return defaultValue;
+        }
+      }
+      return defaultValue;
+    }
+
+    int safeParseInt(dynamic value, int defaultValue) {
+      if (value == null) return defaultValue;
+      if (value is int) return value;
+      if (value is double) return value.toInt();
+      if (value is String) {
+        try {
+          // Remove non-numeric characters
+          final cleanValue = value.replaceAll(RegExp(r'[^\d]'), '');
+          return int.parse(cleanValue);
+        } catch (_) {
+          return defaultValue;
+        }
+      }
+      return defaultValue;
+    }
+
+    String safeParseString(dynamic value, String defaultValue) {
+      if (value == null) return defaultValue;
+      return value.toString().trim();
+    }
+
+    // Parse timestamps safely
+    dynamic safeParseTimestamp(dynamic value) {
+      if (value == null) return null;
+      if (value is Timestamp) return value;
+      if (value is DateTime) return Timestamp.fromDate(value);
+      if (value is int) return Timestamp.fromMillisecondsSinceEpoch(value);
+      return null;
+    }
+
+    return {
+      // Use document ID as primary identifier
+      'id': documentId,
+      'documentId': documentId,
+      
+      // Essential product fields with flexible schema support
+      'Name': safeParseString(
+        productData['Name'] ?? 
+        productData['name'] ?? 
+        productData['productName'] ?? 
+        productData['title'],
+        'Unknown Product'
+      ),
+      
+      'Price': safeParseDouble(
+        productData['Price'] ?? 
+        productData['price'] ?? 
+        productData['cost'] ?? 
+        productData['amount'],
+        0.0
+      ),
+      
+      'Quantity': safeParseInt(
+        productData['Quantity'] ?? 
+        productData['quantity'] ?? 
+        productData['stock'] ?? 
+        productData['inventory'],
+        0
+      ),
+      
+      'Category': safeParseString(
+        productData['Category'] ?? 
+        productData['category'] ?? 
+        productData['type'],
+        'General'
+      ),
+      
+      // Store information (without user-specific filtering)
+      'StoreName': safeParseString(
+        productData['StoreName'] ?? 
+        productData['storeName'] ?? 
+        productData['store'] ?? 
+        productData['vendor'] ?? 
+        productData['supplier'],
+        'Unknown Store'
+      ),
+      
+      'StoreId': safeParseString(
+        productData['StoreId'] ?? 
+        productData['storeId'] ?? 
+        productData['vendorId'] ?? 
+        productData['supplierId'],
+        'unknown_store'
+      ),
+      
+      'storeEmail': safeParseString(
+        productData['storeEmail'] ?? 
+        productData['store_email'] ?? 
+        productData['email'] ?? 
+        productData['contact_email'],
+        ''
+      ),
+      
+      // Optional product details
+      'Type': safeParseString(
+        productData['Type'] ?? 
+        productData['type'] ?? 
+        productData['productType'],
+        'General'
+      ),
+      
+      'ProductId': safeParseString(
+        productData['ProductId'] ?? 
+        productData['productId'] ?? 
+        productData['sku'] ?? 
+        documentId,
+        documentId
+      ),
+      
+      'description': safeParseString(
+        productData['description'] ?? 
+        productData['Description'] ?? 
+        productData['details'],
+        ''
+      ),
+      
+      'manufacturer': safeParseString(
+        productData['manufacturer'] ?? 
+        productData['Manufacturer'] ?? 
+        productData['brand'] ?? 
+        productData['Brand'],
+        ''
+      ),
+      
+      // Location data (GeoPoint handling)
+      'StoreLocation': productData['StoreLocation'] ?? 
+                      productData['storeLocation'] ?? 
+                      productData['location'],
+      
+      // Timestamps with flexible parsing
+      'createdAt': safeParseTimestamp(
+        productData['createdAt'] ?? 
+        productData['created_at'] ?? 
+        productData['dateCreated']
+      ),
+      
+      'updatedAt': safeParseTimestamp(
+        productData['updatedAt'] ?? 
+        productData['updated_at'] ?? 
+        productData['dateUpdated']
+      ),
+      
+      'Expire': safeParseTimestamp(
+        productData['Expire'] ?? 
+        productData['expire'] ?? 
+        productData['expiryDate'] ?? 
+        productData['expiry']
+      ),
+      
+      // Additional flexible fields
+      'isActive': productData['isActive'] ?? 
+                 productData['active'] ?? 
+                 productData['enabled'] ?? 
+                 true,
+      
+      // Keep any additional fields that might exist
+      ...productData.entries
+          .where((entry) => ![
+            'Name', 'name', 'productName', 'title',
+            'Price', 'price', 'cost', 'amount',
+            'Quantity', 'quantity', 'stock', 'inventory',
+            'Category', 'category', 'type',
+            'StoreName', 'storeName', 'store', 'vendor', 'supplier',
+            'StoreId', 'storeId', 'vendorId', 'supplierId',
+            'storeEmail', 'store_email', 'email', 'contact_email',
+            'Type', 'productType',
+            'ProductId', 'productId', 'sku',
+            'description', 'Description', 'details',
+            'manufacturer', 'Manufacturer', 'brand', 'Brand',
+            'StoreLocation', 'storeLocation', 'location',
+            'createdAt', 'created_at', 'dateCreated',
+            'updatedAt', 'updated_at', 'dateUpdated',
+            'Expire', 'expire', 'expiryDate', 'expiry',
+            'isActive', 'active', 'enabled'
+          ].contains(entry.key))
+          .fold<Map<String, dynamic>>({}, (map, entry) {
+            map[entry.key] = entry.value;
+            return map;
+          }),
+    };
+  }
+
+  /// Validate if a mapped product has essential data
+  static bool _isValidProduct(Map<String, dynamic> product) {
+    // Check for essential fields
+    final name = product['Name']?.toString().trim() ?? '';
+    final price = product['Price'] ?? 0;
+    final quantity = product['Quantity'] ?? 0;
+    
+    // Must have a valid name and either price or quantity
+    return name.isNotEmpty && 
+           name != 'Unknown Product' && 
+           (price > 0 || quantity > 0);
   }
 
   /// Search products by name or description

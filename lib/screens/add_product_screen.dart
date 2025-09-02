@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/firestore_service.dart';
@@ -86,13 +87,12 @@ class _AddProductScreenState extends State<AddProductScreen> {
     });
 
     try {
-      // Use a consistent user ID (in a real app, this would come from authentication)
-      // For demo purposes, using a fixed ID so all products go to the same user
-      const userId = 'demo_user_123';
+      // Generate a unique store ID for this product
+      const storeId = 'store_demo_001'; // In a real app, this would come from authentication
       
-      print('🔥 AddProductScreen: Using userId = $userId');
+      log('AddProductScreen: Using storeId = $storeId', name: 'AddProductScreen');
       
-      // Create minimal test product data to ensure it saves properly
+      // Create product data for centralized collection
       final productData = <String, dynamic>{
         'Name': _nameController.text.trim(),
         'Price': double.tryParse(_priceController.text.trim()) ?? 0.0,
@@ -100,11 +100,11 @@ class _AddProductScreenState extends State<AddProductScreen> {
         'Category': _categoryController.text.trim(),
         'Type': _typeController.text.trim(),
         'StoreName': _storeNameController.text.trim(),
-        'StoreId': userId,
-        'createdAt': DateTime.now().millisecondsSinceEpoch,
+        'StoreId': storeId,
+        'isActive': true,
       };
       
-      // Only add optional fields if they have values
+      // Add optional fields if they have values
       if (_storeEmailController.text.trim().isNotEmpty) {
         productData['storeEmail'] = _storeEmailController.text.trim();
       }
@@ -115,29 +115,32 @@ class _AddProductScreenState extends State<AddProductScreen> {
         productData['manufacturer'] = _manufacturerController.text.trim();
       }
       if (_selectedExpiryDate != null) {
-        productData['Expire'] = _selectedExpiryDate!.millisecondsSinceEpoch;
+        productData['Expire'] = Timestamp.fromDate(_selectedExpiryDate!);
       }
       
-      print('🎯 AddProductScreen: Raw product data before saving:');
+      log('AddProductScreen: Raw product data before saving:', name: 'AddProductScreen');
       productData.forEach((key, value) {
-        print('  $key: $value (${value.runtimeType})');
+        log('  $key: $value (${value.runtimeType})', name: 'AddProductScreen');
       });
       
-      print('🎯 AddProductScreen: Product data to save: ${productData.toString()}');
+      log('AddProductScreen: Product data to save: ${productData.toString()}', name: 'AddProductScreen');
 
-      // Save to Firestore using the user-specific method
-      await FirestoreService.addProductToUser(userId, productData);
+      // Save to centralized Firestore collection
+      final productId = await FirestoreService.addProduct(productData);
+      
+      log('AddProductScreen: Product saved with ID: $productId', name: 'AddProductScreen');
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Product added successfully!'),
+            content: Text('Product added to global collection successfully!'),
             backgroundColor: Colors.green,
           ),
         );
         Navigator.of(context).pop(true); // Return true to indicate success
       }
     } catch (e) {
+      log('AddProductScreen: Error saving product: $e', name: 'AddProductScreen');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

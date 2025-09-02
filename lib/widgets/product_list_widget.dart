@@ -73,66 +73,100 @@ class _ProductListWidgetState extends State<ProductListWidget> {
     }
   }
 
-  // Working function based on your database structure
-  // Expected Firestore structure: Products/{userId}/products/{productId}
-  // This matches the structure created by FirestoreService.addProductToUser()
+  // Updated for centralized product collection structure
+  // New Firestore structure: products (collection) -> product documents
+  // No user-specific subcollections - all products are globally accessible
   Future getProducts() async {
     try {
-      // Get all products from all stores using the new Firebase structure
-      final userSnapshot =
-          await FirebaseFirestore.instance.collection('Products').get();
+      // Get all products directly from centralized collection
+      final productsSnapshot =
+          await FirebaseFirestore.instance.collection('products').get();
 
       print(
-          '🔍 ProductListWidget: Found ${userSnapshot.docs.length} user documents in Products collection');
+          '🔍 ProductListWidget: Found ${productsSnapshot.docs.length} products in centralized collection');
 
       setState(() {
         products.clear();
       });
 
-      for (var userDoc in userSnapshot.docs) {
-        print('👤 ProductListWidget: Processing user ${userDoc.id}');
+      for (var productDoc in productsSnapshot.docs) {
         try {
-          // Get the products subcollection for this user
-          final productsSubcollection =
-              userDoc.reference.collection('Products');
-          final productsSnapshot = await productsSubcollection.get();
-
-          print(
-              '  📦 ProductListWidget: Found ${productsSnapshot.docs.length} products for user ${userDoc.id}');
-
-          // Add each product to the main list
-          for (var productDoc in productsSnapshot.docs) {
-            final data = productDoc.data();
-            print(
-                '    ✅ ProductListWidget: Adding product ${data['Name']} (${productDoc.id})');
+          final data = productDoc.data();
+          
+          // Map product data with robust null-checks and flexible schema support
+          final mappedProduct = {
+            "Name": _safeParseString(
+              data['Name'] ?? data['name'] ?? data['productName'] ?? data['title'],
+              'Unknown Product'
+            ),
+            "Price": _safeParseDouble(
+              data['Price'] ?? data['price'] ?? data['cost'] ?? data['amount'],
+              0.0
+            ),
+            "Quantity": _safeParseInt(
+              data['Quantity'] ?? data['quantity'] ?? data['stock'] ?? data['inventory'],
+              0
+            ),
+            "StoreId": _safeParseString(
+              data['StoreId'] ?? data['storeId'] ?? data['vendorId'] ?? data['supplierId'],
+              'unknown_store'
+            ),
+            "ProductId": _safeParseString(
+              data['ProductId'] ?? data['productId'] ?? data['sku'] ?? productDoc.id,
+              productDoc.id
+            ),
+            "Type": _safeParseString(
+              data['Type'] ?? data['type'] ?? data['productType'],
+              'General'
+            ),
+            "Category": _safeParseString(
+              data['Category'] ?? data['category'],
+              'General'
+            ),
+            "StoreName": _safeParseString(
+              data['StoreName'] ?? data['storeName'] ?? data['store'] ?? data['vendor'],
+              'Unknown Store'
+            ),
+            "StoreLocation": data['StoreLocation'] ?? data['storeLocation'] ?? data['location'],
+            "storeEmail": _safeParseString(
+              data['storeEmail'] ?? data['store_email'] ?? data['email'],
+              ''
+            ),
+            "Expire": data['Expire'] ?? data['expire'] ?? data['expiryDate'],
+            "description": _safeParseString(
+              data['description'] ?? data['Description'] ?? data['details'],
+              ''
+            ),
+            "manufacturer": _safeParseString(
+              data['manufacturer'] ?? data['Manufacturer'] ?? data['brand'],
+              ''
+            ),
+            "id": productDoc.id,
+            "documentId": productDoc.id,
+            "createdAt": data['createdAt'],
+            "updatedAt": data['updatedAt'],
+            "isActive": data['isActive'] ?? data['active'] ?? data['enabled'] ?? true,
+          };
+          
+          // Only add valid products
+          if (_isValidProduct(mappedProduct)) {
             setState(() {
-              products.add({
-                "Name": data['Name'] ?? data['name'] ?? 'Unknown Product',
-                "Price": data['Price'] ?? data['price'] ?? 0,
-                "Quantity": data['Quantity'] ?? data['quantity'] ?? 0,
-                "StoreId": data['StoreId'] ?? data['storeId'] ?? userDoc.id,
-                "ProductId":
-                    data['ProductId'] ?? data['productId'] ?? productDoc.id,
-                "Type": data['Type'] ?? data['type'] ?? 'Medicine',
-                "Category": data['Category'] ?? data['category'] ?? 'General',
-                "StoreName":
-                    data['StoreName'] ?? data['storeName'] ?? 'Unknown Store',
-                "StoreLocation": data['StoreLocation'] ?? data['storeLocation'],
-                "storeEmail": data['storeEmail'] ?? data['email'] ?? '',
-                "Expire": data['Expire'] ?? data['expire'],
-                "id": productDoc.id,
-                "userId": userDoc.id,
-              });
+              products.add(mappedProduct);
             });
+            
+            if (products.length <= 5) {
+              print('    ✅ ProductListWidget: Added product ${mappedProduct['Name']} (${productDoc.id})');
+            }
+          } else {
+            print('    ⚠️ ProductListWidget: Skipped invalid product ${productDoc.id}');
           }
         } catch (e) {
-          print(
-              '❌ ProductListWidget: Error getting products for user ${userDoc.id}: $e');
+          print('❌ ProductListWidget: Error processing product ${productDoc.id}: $e');
           continue;
         }
       }
 
-      print('📊 ProductListWidget: Total products loaded: ${products.length}');
+      print('📊 ProductListWidget: Total valid products loaded: ${products.length}');
     } catch (e) {
       print('❌ ProductListWidget: Error getting all products: $e');
       throw e;
@@ -558,5 +592,52 @@ class _ProductListWidgetState extends State<ProductListWidget> {
         ),
       ),
     );
+  }
+  
+  // Helper methods for safe data parsing
+  String _safeParseString(dynamic value, String defaultValue) {
+    if (value == null) return defaultValue;
+    return value.toString().trim();
+  }
+  
+  double _safeParseDouble(dynamic value, double defaultValue) {
+    if (value == null) return defaultValue;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) {
+      try {
+        final cleanValue = value.replaceAll(RegExp(r'[^\d.]'), '');
+        return double.parse(cleanValue);
+      } catch (_) {
+        return defaultValue;
+      }
+    }
+    return defaultValue;
+  }
+  
+  int _safeParseInt(dynamic value, int defaultValue) {
+    if (value == null) return defaultValue;
+    if (value is int) return value;
+    if (value is double) return value.toInt();
+    if (value is String) {
+      try {
+        final cleanValue = value.replaceAll(RegExp(r'[^\d]'), '');
+        return int.parse(cleanValue);
+      } catch (_) {
+        return defaultValue;
+      }
+    }
+    return defaultValue;
+  }
+  
+  // Validate if a product has essential data
+  bool _isValidProduct(Map<String, dynamic> product) {
+    final name = product['Name']?.toString().trim() ?? '';
+    final price = product['Price'] ?? 0;
+    final quantity = product['Quantity'] ?? 0;
+    
+    return name.isNotEmpty && 
+           name != 'Unknown Product' && 
+           (price > 0 || quantity > 0);
   }
 }

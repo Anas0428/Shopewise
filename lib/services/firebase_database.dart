@@ -129,37 +129,12 @@ class FlutterApi {
 
   Future<List> getAllProducts() async {
     try {
-      print("🔄 FlutterApi: Getting all products from nested structure...");
+      print("🔄 FlutterApi: Getting all products from centralized collection...");
       
-      // Get all user documents from Products collection
-      final userSnapshot = await FirestoreService.getCollection("Products");
-      final allProducts = <Map<String, dynamic>>[];
+      // Use the centralized FirestoreService method
+      final allProducts = await FirestoreService.getAllProductsList();
 
-      print("📁 FlutterApi: Found ${userSnapshot.docs.length} user documents");
-
-      // Loop through each user document
-      for (var userDoc in userSnapshot.docs) {
-        try {
-          // Get the products subcollection for this user
-          final productsSubcollection = userDoc.reference.collection('products');
-          final productsSnapshot = await productsSubcollection.get();
-
-          print("👤 FlutterApi: User ${userDoc.id}: Found ${productsSnapshot.docs.length} products");
-
-          // Add each product to the main list
-          for (var productDoc in productsSnapshot.docs) {
-            final data = productDoc.data();
-            data['id'] = productDoc.id; // Add product document ID
-            data['userId'] = userDoc.id; // Add user ID for reference
-            allProducts.add(data);
-          }
-        } catch (e) {
-          print("⚠️ FlutterApi: Error getting products for user ${userDoc.id}: $e");
-          // Continue with other users even if one fails
-        }
-      }
-
-      print("✅ FlutterApi: Retrieved total of ${allProducts.length} products");
+      print("✅ FlutterApi: Retrieved total of ${allProducts.length} products from centralized collection");
       return Future<List>.value(allProducts);
     } catch (e) {
       print("❌ FlutterApi: Error getting all products: $e");
@@ -170,19 +145,13 @@ class FlutterApi {
   Future<void> searchQuery(
       String query, double latitude, double longitude) async {
     try {
-      // Getting the products with productName and within 10 km radius
-      final querySnapshot = await FirestoreService.getCollection("Products");
+      // Search products using centralized collection without user filtering
+      final searchResults = await FirestoreService.searchProducts(query);
 
-      for (var doc in querySnapshot.docs) {
-        final product = doc.data() as Map<String, dynamic>;
-        // Checking if the product name contains the query
-        if (product['Name']
-                ?.toString()
-                .toLowerCase()
-                .contains(query.toLowerCase()) ==
-            true) {
-          print(product['Name']);
-        }
+      print("🔍 FlutterApi: Search for '$query' returned ${searchResults.length} results");
+      
+      for (var product in searchResults) {
+        print("Found product: ${product['Name']} - ${product['StoreName']}");
       }
     } catch (e) {
       print("Error in searchQuery: $e");
